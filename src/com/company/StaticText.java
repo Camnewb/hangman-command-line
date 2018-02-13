@@ -151,7 +151,7 @@ public class StaticText {
         return "";
     }
 
-    public static String prompt(int stage, String guessedCharWord, List<Character> wrongGuessedChars) {
+    public static String prompt(boolean isWrong, int stage, String guessedCharWord, List<Character> wrongGuessedChars) {
         String promptText = hangMan(stage) +
                 "\n" +
                 "==================================\n";
@@ -160,9 +160,15 @@ public class StaticText {
             wrongChars.append(wrongGuessedChar.toString()).append(", ");
         }
         promptText += wrongChars + "\n" +
-                "----------------------------------\n" +
-                guessedCharWord + "\n" +
-                "Make another guess.\n";
+                "----------------------------------\n";
+        if (isWrong) {
+            promptText += guessedCharWord + "\n" +
+                    "That was incorrect. Make another guess.\n";
+        }
+        else {
+            promptText += "\n" +
+                    "That was correct. Make another guess.\n";
+        }
         return promptText;
     }
 

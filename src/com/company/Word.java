@@ -5,27 +5,48 @@ import java.util.List;
 
 public class Word {
 
-    private String string;
+    private String wordString;
     private List<Character> visibleChars;
     private List<Character> wrongGuessedChars;
+    private List<String> wrongGuessedWords;
+    private boolean hasBeenCorrectlyGuessed;
 
-    public Word(String word) {
-        this.string = word;
+    Word(String word) {
+        this.wordString = word;
         this.visibleChars = new ArrayList<>();
         this.wrongGuessedChars = new ArrayList<>();
+        this.wrongGuessedWords = new ArrayList<>();
+        this.hasBeenCorrectlyGuessed = false;
+    }
+
+    Word(WordBank.Category category) {
+        WordBank wordBank = new WordBank();
+        this.wordString = wordBank.getRandomWord(category);
+        this.visibleChars = new ArrayList<>();
+        this.wrongGuessedChars = new ArrayList<>();
+        this.wrongGuessedWords = new ArrayList<>();
+        this.hasBeenCorrectlyGuessed = false;
     }
 
     public String getFullWord() {
-        return this.string;
+        return this.wordString;
     }
 
     public List<Character> getWrongGuessedChars() {
-        return wrongGuessedChars;
+        return this.wrongGuessedChars;
+    }
+
+    public List<String> getWrongGuessedWords() {
+        return this.wrongGuessedWords;
+    }
+
+    public boolean getHasBeenCorrectlyGuessed() {
+        return this.hasBeenCorrectlyGuessed;
     }
 
     public String getBlankWord() {
         StringBuilder blankWord = new StringBuilder();
-        for (int i = 0; i < this.string.length(); i++) {
+        for (int i = 0; i < this.wordString.length(); i++) {
             blankWord.append("_");
         }
         return blankWord.toString();
@@ -33,10 +54,10 @@ public class Word {
 
     public String getGuessedShownWord() {
         StringBuilder shownWord = new StringBuilder();
-        for (int i = 0; i < this.string.length(); i++) {
+        for (int i = 0; i < this.wordString.length(); i++) {
             boolean blank = true;//
             for (Character visibleChar : visibleChars) {
-                if (this.string.substring(i, i + 1).indexOf(visibleChar) != -1) {
+                if (this.wordString.substring(i, i + 1).indexOf(visibleChar) != -1) {
                     shownWord.append(visibleChar);
                     blank = false;
                 }
@@ -49,12 +70,29 @@ public class Word {
         return shownWord.toString();
     }
 
+    /**
+     * Method for guessing a character in the word
+     * @param guess char guess
+     */
     public void guessChar(Character guess) {
-        if (this.string.indexOf(guess) != -1 && !isAlreadyGuessed(guess)) {
+        if (this.wordString.indexOf(guess) != -1 && !isAlreadyGuessed(guess)) {
             this.visibleChars.add(guess);
         }
         else {
             this.wrongGuessedChars.add(guess);
+        }
+    }
+
+    /**
+     * Method for guessing the word
+     * @param guess String guess
+     */
+    public void guessWord(String guess) {
+        if (this.wordString.equals(guess)) {
+            this.hasBeenCorrectlyGuessed = true;
+        }
+        else {
+            this.wrongGuessedWords.add(guess);
         }
     }
 

@@ -9,7 +9,7 @@ public class WordBank {
 
     private List<String> colorBank;
 
-    public WordBank() {
+    WordBank() {
         this.colorBank = new ArrayList<>();
         this.colorBank.addAll(Arrays.asList("azure", "cyan", "chartreuse", "aqua", "olive", "magenta"));
     }
