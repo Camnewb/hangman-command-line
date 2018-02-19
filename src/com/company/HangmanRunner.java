@@ -1,7 +1,5 @@
 package com.company;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -10,18 +8,33 @@ import java.util.Scanner;
 public class HangmanRunner {
 
     private static final Scanner scanner = new Scanner(System.in);
+    private static final int maxGuesses = 6;
 
     /**
      * Basically the main method. Not actually the main method so I can do recursion! Or maybe it wasn't necessary... WHO CARES ANYMORE?!
      */
     public static void run() {
-        WordBank wordBank = new WordBank();
-        Word word = new Word(wordBank.getRandomWord(WordBank.Category.COLORS));
+        Word word = new Word(WordBank.Category.COLORS);
 
-        for (int stage = 6; stage >= 0; stage--) {
-            readInput(word, false);
+        print(StaticText.introText(word.getBlankWord()));
+        for(int stage = 0; !word.isFinished() && stage <= maxGuesses; stage++) {
+            GuessType guessType = readInput(word, false);
+            if (guessType.equals(GuessType.OTHER)) {
+                stage--;
+            }
+            else if (guessType.equals(GuessType.CORRECTWORDGUESS)) {
+                break;
+            }
+            else {
+                print(StaticText.prompt(guessType.equals(GuessType.WRONGCHARGUESS) || guessType.equals(GuessType.WRONGWORDGUESS), //Returns the prompt based on whether the guess is correct
+                        6 - stage, word.getGuessesShownWord(), word.getWrongGuessedChars(), word.getWrongGuessedWords()));
+                if (guessType.equals(GuessType.CORRECTCHARGUESS)) {
+                    stage--;
+                }
+            }
         }
-
+        print("You did it! Don't expect a medal or anything...");
+        System.exit(80085);
     }
 
     /**
@@ -35,27 +48,35 @@ public class HangmanRunner {
     /**
      * Tests (hopefully) all conditions of an input and processes it
      * @param word THE. word
+     * @return Whether a guess was made or not
      */
-    private static void readInput(Word word, boolean warn) {//Reads the input and does all the stuff
+    private static GuessType readInput(Word word, boolean warn) {//Reads the input and does all the stuff
         if (warn) print("I don't understand that input. What kind of nonsense did you just type?!");
         String input = scanner.nextLine();
         input = input.toLowerCase();
+        boolean correct;
 
         switch (getInputType(input)) {
             case CHARGUESS:
-                if (charGuessCheck(word, input)) {
-                    //do stuff
-                }
-                break;
+                correct = charGuessCheck(word, input);
+                return correct ? GuessType.CORRECTCHARGUESS : GuessType.WRONGCHARGUESS;
             case WORDGUESS:
-                if (wordGuessCheck(word, input)) {
-                    //do other stuff
-                }
+                correct = wordGuessCheck(word, input);
+                return correct ? GuessType.CORRECTWORDGUESS : GuessType.WRONGWORDGUESS;
+
+            case INVALIDCOMMAND:
+                print("I don't understand that command. Choose one of these:" +
+                        "\n--==============================-- \n" +
+                        "        --Commands List--          \n" +
+                        " /exit     : Exits program. Duh. \n" +
+                        " /restart  : Starts a new game. \n" +
+                        "" +
+                        "\n--==============================-- \n");
                 break;
             default:
-                print("Ok, that isn't even possible. How did you... you know what? Nevermind. I give up. \n Nope. -Cam");
-                System.exit(-12345125);
+                return GuessType.OTHER;
         }
+        return GuessType.OTHER;
     }
 
     /**
@@ -85,10 +106,20 @@ public class HangmanRunner {
                 }
 
             }
-            return InputType.INVALIDINPUT;
+            return InputType.INVALIDCOMMAND;
         }
         //Checks for guesses
-
+        if (input.matches(".*[a-z]")) {
+            if (input.length() == 1) {
+                return InputType.CHARGUESS;
+            }
+            else if (input.length() > 1) {
+                return InputType.WORDGUESS;
+            }
+            else {
+                return InputType.INVALIDINPUT;
+            }
+        }
 
         return InputType.INVALIDINPUT;
     }
@@ -100,7 +131,7 @@ public class HangmanRunner {
      * @return Guess is Correct/Incorrect, or True/False
      */
     private static boolean charGuessCheck(Word word, String guess) {
-        return false;
+        return word.guessChar(guess.charAt(0));
     }
 
     /**
@@ -110,7 +141,7 @@ public class HangmanRunner {
      * @return Guess is Correct/Incorrect, or True/False
      */
     private static boolean wordGuessCheck(Word word, String guess) {
-        return false;
+        return word.guessWord(guess);
     }
 
     private static void restartConfirm() {
@@ -146,11 +177,17 @@ public class HangmanRunner {
         return false;
     }
 
-    private enum InputType {//Used by the readInput methods and most methods used by it
+    private enum InputType {//Used by the readInput method
         CHARGUESS, WORDGUESS,
         EXITCOMMAND, RESTARTCOMMAND,
-        INVALIDGUESS, INVALIDINPUT,
+        INVALIDGUESS, INVALIDCOMMAND, INVALIDINPUT,
         OTHER
+    }
+
+    private enum GuessType {//Also used by readInput method
+        CORRECTCHARGUESS, CORRECTWORDGUESS,
+        WRONGCHARGUESS, WRONGWORDGUESS,
+        OTHER,
     }
 
 }

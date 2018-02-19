@@ -3,6 +3,9 @@ package com.company;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Handles all actions to do with word guessing
+ */
 public class Word {
 
     private String wordString;
@@ -10,6 +13,7 @@ public class Word {
     private List<Character> wrongGuessedChars;
     private List<String> wrongGuessedWords;
     private boolean hasBeenCorrectlyGuessed;
+    private boolean isFinished = false;
 
     Word(String word) {
         this.wordString = word;
@@ -52,7 +56,14 @@ public class Word {
         return blankWord.toString();
     }
 
-    public String getGuessedShownWord() {
+    /**
+     * Assembles the classic hangman word with underscores
+     * replacing the the unknown letters. For example,
+     * if the word is "argonian" a possible return would
+     * be "ar__n_an" with chars a, r, and n already guessed.
+     * @return The assembled hangman word
+     */
+    public String getGuessesShownWord() {
         StringBuilder shownWord = new StringBuilder();
         for (int i = 0; i < this.wordString.length(); i++) {
             boolean blank = true;//
@@ -73,26 +84,38 @@ public class Word {
     /**
      * Method for guessing a character in the word
      * @param guess char guess
+     * @return Whether guess is correct or not
      */
-    public void guessChar(Character guess) {
+    public boolean guessChar(Character guess) {
         if (this.wordString.indexOf(guess) != -1 && !isAlreadyGuessed(guess)) {
             this.visibleChars.add(guess);
+            return true;
         }
         else {
             this.wrongGuessedChars.add(guess);
+            if (this.wrongGuessedChars.size() + this.wrongGuessedWords.size() >= 6) {
+                this.isFinished = true;
+            }
+            return false;
         }
     }
 
     /**
      * Method for guessing the word
      * @param guess String guess
+     * @return Whether guess is correct or not
      */
-    public void guessWord(String guess) {
+    public boolean guessWord(String guess) {
         if (this.wordString.equals(guess)) {
             this.hasBeenCorrectlyGuessed = true;
+            return true;
         }
         else {
             this.wrongGuessedWords.add(guess);
+            if (this.wrongGuessedChars.size() + this.wrongGuessedWords.size() >= 6) {
+                this.isFinished = true;
+            }
+            return false;
         }
     }
 
@@ -103,6 +126,13 @@ public class Word {
             }
         }
         return false;
+    }
+
+    public boolean isFinished() {
+        if (!this.isFinished) {
+            this.isFinished = !getGuessesShownWord().contains("_");
+        }
+        return this.isFinished;
     }
 
 }

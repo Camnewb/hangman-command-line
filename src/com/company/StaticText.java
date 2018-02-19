@@ -4,12 +4,14 @@ import java.util.List;
 
 public class StaticText {
 
-    public static String introText() {
+    public static String introText(String blankWord) {
         return "\n" +
                 "==================================\n" +
                 "-------------Hang Man-------------\n" +
                 "==================================\n" +
-                "\n";
+                "\n" +
+                "Welcome to hangman! Your word is: \n" +
+                blankWord;
     }
 
     public static String hangMan(int stage) {
@@ -151,13 +153,16 @@ public class StaticText {
         return "";
     }
 
-    public static String prompt(boolean isWrong, int stage, String guessedCharWord, List<Character> wrongGuessedChars) {
+    public static String prompt(boolean isWrong, int stage, String guessedCharWord, List<Character> wrongGuessedChars, List<String> wrongGuessedWords) {
         String promptText = hangMan(stage) +
                 "\n" +
                 "==================================\n";
         StringBuilder wrongChars = new StringBuilder();
         for (Character wrongGuessedChar : wrongGuessedChars) {
             wrongChars.append(wrongGuessedChar.toString()).append(", ");
+        }
+        for (String wrongGuessedWord : wrongGuessedWords) {
+            wrongChars.append(wrongGuessedWord).append(", ");
         }
         promptText += wrongChars + "\n" +
                 "----------------------------------\n";
@@ -166,7 +171,7 @@ public class StaticText {
                     "That was incorrect. Make another guess.\n";
         }
         else {
-            promptText += "\n" +
+            promptText += guessedCharWord + "\n" +
                     "That was correct. Make another guess.\n";
         }
         return promptText;
