@@ -2,6 +2,7 @@ package com.company;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Handles all actions to do with word guessing
@@ -9,43 +10,46 @@ import java.util.List;
 public class Word {
 
     private String wordString;
-    private List<Character> visibleChars;
-    private List<Character> wrongGuessedChars;
-    private List<String> wrongGuessedWords;
-    private boolean hasBeenCorrectlyGuessed;
-    private boolean isFinished = false;
+    private int maxGuesses;
 
-    Word(String word) {
+    private List<Character> visibleChars = new ArrayList<>();
+    private List<Character> wrongGuessedChars = new ArrayList<>();
+    private List<String> guessedWords = new ArrayList<>();
+
+    private boolean hasBeenCorrectlyGuessed = false;
+    private boolean ranOutOfGuesses = false;
+
+    Word(String word, int maxGuesses) {
         this.wordString = word;
-        this.visibleChars = new ArrayList<>();
-        this.wrongGuessedChars = new ArrayList<>();
-        this.wrongGuessedWords = new ArrayList<>();
-        this.hasBeenCorrectlyGuessed = false;
+        this.maxGuesses = maxGuesses;
     }
 
-    Word(WordBank.Category category) {
-        WordBank wordBank = new WordBank();
-        this.wordString = wordBank.getRandomWord(category);
-        this.visibleChars = new ArrayList<>();
-        this.wrongGuessedChars = new ArrayList<>();
-        this.wrongGuessedWords = new ArrayList<>();
-        this.hasBeenCorrectlyGuessed = false;
+    Word(WordBank.Category category, int maxGuesses) {
+        this(WordBank.getRandomWord(category), maxGuesses);
     }
 
     public String getFullWord() {
-        return this.wordString;
+        return underline(this.wordString);
     }
 
     public List<Character> getWrongGuessedChars() {
         return this.wrongGuessedChars;
     }
 
-    public List<String> getWrongGuessedWords() {
-        return this.wrongGuessedWords;
+    public List<String> getAllGuessedWords() {
+        return this.guessedWords;
     }
 
-    public boolean getHasBeenCorrectlyGuessed() {
+    public List<String> getWrongGuessedWords() {//Filtered out correct guesses. Not sure this is necessary but whatever
+        return this.guessedWords.stream().filter(word -> !word.equals(this.wordString)).collect(Collectors.toList());
+    }
+
+    public boolean hasBeenCorrectlyGuessed() {
         return this.hasBeenCorrectlyGuessed;
+    }
+
+    public int getGuesses() {
+        return this.wrongGuessedChars.size() + getWrongGuessedWords().size();
     }
 
     public String getBlankWord() {
@@ -78,7 +82,11 @@ public class Word {
                 shownWord.append("_");
             }
         }
-        return shownWord.toString();
+        return underline(shownWord.toString());
+    }
+
+    private static String underline(String str) {//Uses voodoo magic to underline text in the command line
+        return (char) 27 + "[4m" + str + (char) 27 + "[0m";
     }
 
     /**
@@ -86,17 +94,19 @@ public class Word {
      * @param guess char guess
      * @return Whether guess is correct or not
      */
-    public boolean guessChar(Character guess) {
-        if (this.wordString.indexOf(guess) != -1 && !isAlreadyGuessed(guess)) {
+    public GuessResult guessChar(Character guess) {
+        //Checks if char has already been guessed, checks for accuracy, and either adds the guess to visibleChars or
+        //wrongGuessedChars
+        if (isAlreadyGuessed(guess)) {
+            return GuessResult.PREVGUESSED;
+        }
+        if (this.wordString.indexOf(guess) != -1) {
             this.visibleChars.add(guess);
-            return true;
+            return GuessResult.CORRECT;
         }
         else {
             this.wrongGuessedChars.add(guess);
-            if (this.wrongGuessedChars.size() + this.wrongGuessedWords.size() >= 6) {
-                this.isFinished = true;
-            }
-            return false;
+            return GuessResult.INCORRECT;
         }
     }
 
@@ -105,21 +115,23 @@ public class Word {
      * @param guess String guess
      * @return Whether guess is correct or not
      */
-    public boolean guessWord(String guess) {
-        if (this.wordString.equals(guess)) {
+    public GuessResult guessWord(String guess) {
+        //Checks if word has already been guessed, checks for accuracy, and a
+        if (isAlreadyGuessed(guess)) {
+            return GuessResult.PREVGUESSED;
+        }
+        else if (this.wordString.equals(guess)) {
             this.hasBeenCorrectlyGuessed = true;
-            return true;
+            this.guessedWords.add(guess);
+            return GuessResult.CORRECT;
         }
         else {
-            this.wrongGuessedWords.add(guess);
-            if (this.wrongGuessedChars.size() + this.wrongGuessedWords.size() >= 6) {
-                this.isFinished = true;
-            }
-            return false;
+            this.guessedWords.add(guess);
+            return GuessResult.INCORRECT;
         }
     }
 
-    public boolean isAlreadyGuessed(Character character) {
+    private boolean isAlreadyGuessed(Character character) {
         for (Character visibleChar : visibleChars) {
             if (visibleChar.equals(character)) {
                 return true;
@@ -128,11 +140,35 @@ public class Word {
         return false;
     }
 
-    public boolean isFinished() {
-        if (!this.isFinished) {
-            this.isFinished = !getGuessesShownWord().contains("_");
+    private boolean isAlreadyGuessed(String string) {
+        for (String word : guessedWords) {
+            if (word.equals(string)) {
+                return true;
+            }
         }
-        return this.isFinished;
+        return false;
+    }
+
+    public boolean isUnfinished() {//Not isFinished because IntelliJ was complaining about it being always inverted
+        if (!this.ranOutOfGuesses) {
+            //noinspection SimplifiableIfStatement I WANT MY CODE TO BE READABLE DAMMIT
+            if (!getGuessesShownWord().contains("_")) {
+                this.hasBeenCorrectlyGuessed = true;
+            }
+            else {
+                this.hasBeenCorrectlyGuessed = this.guessedWords.contains(this.wordString);
+            }
+        }
+        else {
+            this.ranOutOfGuesses = this.wrongGuessedChars.size() + getWrongGuessedWords().size() >= this.maxGuesses;
+            return this.ranOutOfGuesses;
+        }
+        return !hasBeenCorrectlyGuessed;
+    }
+
+    enum GuessResult {
+        CORRECT, INCORRECT,
+        PREVGUESSED, INVALID
     }
 
 }

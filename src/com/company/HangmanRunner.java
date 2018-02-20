@@ -1,6 +1,7 @@
 package com.company;
 
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 /**
  * Created by Cameron Newborn on Feb 3, 2018
@@ -9,36 +10,54 @@ public class HangmanRunner {
 
     private static final Scanner scanner = new Scanner(System.in);
     private static final int maxGuesses = 6;
+    private static final Logger LOGGER = Logger.getLogger(HangmanRunner.class.getName());
 
     /**
-     * Basically the main method. Not actually the main method so I can do recursion! Or maybe it wasn't necessary... WHO CARES ANYMORE?!
+     * Basically the main method. Not actually the main method so I can do recursion!
+     *
+     * Creates a fresh word, iterates over the readInput method, and prints a new prompt after each guess
      */
     public static void run() {
-        Word word = new Word(WordBank.Category.COLORS);
-
+        Word word = new Word(WordBank.Category.COLORS, maxGuesses);
         print(StaticText.introText(word.getBlankWord()));
-        for(int stage = 0; !word.isFinished() && stage <= maxGuesses; stage++) {
+        while (word.isUnfinished()) {
+            //Main loop for getting user input. Will only run while game is not finished
             GuessType guessType = readInput(word, false);
-            if (guessType.equals(GuessType.OTHER)) {
-                stage--;
+            //Creating prompt text. Prompt depends on the accuracy of the previous guess
+            String prompt = "";
+            switch (guessType) {
+                case CORRECTCHARGUESS:
+                    prompt = "That is correct!";
+                    break;
+                case WRONGCHARGUESS:
+                    prompt = "That is incorrect!";
+                    break;
+                case CORRECTWORDGUESS:
+                    prompt = "That is correct!";
+                    break;
+                case WRONGWORDGUESS:
+                    prompt = "That is incorrect!";
+                    break;
+                case PREVGUESS:
+                    prompt = "You already guessed that.";
+                    break;
             }
-            else if (guessType.equals(GuessType.CORRECTWORDGUESS)) {
-                break;
+            if (!guessType.equals(GuessType.CORRECTWORDGUESS)) {
+                prompt += " Make another guess.";
             }
-            else {
-                print(StaticText.prompt(guessType.equals(GuessType.WRONGCHARGUESS) || guessType.equals(GuessType.WRONGWORDGUESS), //Returns the prompt based on whether the guess is correct
-                        6 - stage, word.getGuessesShownWord(), word.getWrongGuessedChars(), word.getWrongGuessedWords()));
-                if (guessType.equals(GuessType.CORRECTCHARGUESS)) {
-                    stage--;
-                }
-            }
+
+            //prompt value it is put into the prompt() method which adds the hangman art and previous guesses
+            print(StaticText.prompt(prompt, word, !word.isUnfinished()));
         }
-        print("You did it! Don't expect a medal or anything...");
-        System.exit(80085);
+        if (word.isUnfinished() && !word.hasBeenCorrectlyGuessed()) {
+            print("Loop broken unexpectedly!");
+        }
+        endText(word.hasBeenCorrectlyGuessed(), word);
+        System.exit(0);
     }
 
     /**
-     * Certifiably 72.2% faster! (than typing System.out.println()... wait, shit)
+     * Certifiably 72.2% faster! (than typing System.out.println()... wait)
      * @param string the string... you want to print... does it need clarification?
      */
     private static void print(String string) {
@@ -48,31 +67,45 @@ public class HangmanRunner {
     /**
      * Tests (hopefully) all conditions of an input and processes it
      * @param word THE. word
-     * @return Whether a guess was made or not
+     * @return GuessType
      */
     private static GuessType readInput(Word word, boolean warn) {//Reads the input and does all the stuff
-        if (warn) print("I don't understand that input. What kind of nonsense did you just type?!");
+        if (warn) print("I don't understand that input. Make a guess or type a command.");
         String input = scanner.nextLine();
         input = input.toLowerCase();
-        boolean correct;
-
+        //Main input checker switch
         switch (getInputType(input)) {
             case CHARGUESS:
-                correct = charGuessCheck(word, input);
-                return correct ? GuessType.CORRECTCHARGUESS : GuessType.WRONGCHARGUESS;
+
+                switch (word.guessChar(input.charAt(0))) {
+                    case CORRECT:
+                        return GuessType.CORRECTCHARGUESS;
+                    case INCORRECT:
+                        return GuessType.WRONGCHARGUESS;
+                    case PREVGUESSED:
+                        return GuessType.PREVGUESS;
+                    default:
+                        return GuessType.OTHER;
+                }
+
             case WORDGUESS:
-                correct = wordGuessCheck(word, input);
-                return correct ? GuessType.CORRECTWORDGUESS : GuessType.WRONGWORDGUESS;
+
+                switch (word.guessWord(input)) {
+                    case CORRECT:
+                        return GuessType.CORRECTWORDGUESS;
+                    case INCORRECT:
+                        return GuessType.WRONGWORDGUESS;
+                    case PREVGUESSED:
+                        return GuessType.PREVGUESS;
+                    default:
+                        return GuessType.OTHER;
+                }
 
             case INVALIDCOMMAND:
-                print("I don't understand that command. Choose one of these:" +
-                        "\n--==============================-- \n" +
-                        "        --Commands List--          \n" +
-                        " /exit     : Exits program. Duh. \n" +
-                        " /restart  : Starts a new game. \n" +
-                        "" +
-                        "\n--==============================-- \n");
+                print(StaticText.commandsText(true));
                 break;
+            case INVALIDINPUT:
+                return readInput(word, true);
             default:
                 return GuessType.OTHER;
         }
@@ -82,7 +115,7 @@ public class HangmanRunner {
     /**
      * Checks input type
      * @param input User string input
-     * @return The input type
+     * @return InputType
      */
     private static InputType getInputType(String input) {
         //Checks for commands
@@ -97,12 +130,7 @@ public class HangmanRunner {
                     return InputType.RESTARTCOMMAND;
                 }
                 else if (input.contains("/help")) {
-                    print("\n--==============================-- \n" +
-                            "        --Commands List--          \n" +
-                            " /exit     : Exits program. Duh. \n" +
-                            " /restart  : Starts a new game. \n" +
-                            "" +
-                            "\n--==============================-- \n");
+                    print(StaticText.commandsText(false));
                 }
 
             }
@@ -120,34 +148,41 @@ public class HangmanRunner {
                 return InputType.INVALIDINPUT;
             }
         }
-
         return InputType.INVALIDINPUT;
     }
 
     /**
-     * Checks if char guess is correct
-     * @param word THE. word
-     * @param guess String guess input, assuming it is 1 char long
-     * @return Guess is Correct/Incorrect, or True/False
+     * Gives end message, gives user option to start new game or exit
+     * @param winnerWinner
+     * @param word
      */
-    private static boolean charGuessCheck(Word word, String guess) {
-        return word.guessChar(guess.charAt(0));
-    }
-
-    /**
-     * Checks if word guess is correct
-     * @param word THE. word class
-     * @param guess String guess input, assuming it is longer than 1 char
-     * @return Guess is Correct/Incorrect, or True/False
-     */
-    private static boolean wordGuessCheck(Word word, String guess) {
-        return word.guessWord(guess);
+    private static void endText(boolean winnerWinner, Word word) {
+        if (winnerWinner) {
+            print("Congratulations! You have beaten me! \n" +
+                    "Would you like to have another game? Y/N");
+            if (checkYN(false)) {
+                run();
+            }
+            else {
+                exit();
+            }
+        }
+        else {
+            print("Out of guesses! Your word was " + word.getFullWord() + ". \n" +
+                    "Would you like to try again? Y/N");
+            if (checkYN(false)) {
+                run();
+            }
+            else {
+                exit();
+            }
+        }
     }
 
     private static void restartConfirm() {
         print("Are you sure you want to start a new HangMan game?");
         if (checkYN(false)) {
-            print("\n User has restarted the program.");
+            print("\nUser has restarted the program.");
             HangmanRunner.run();
         }
     }
@@ -155,19 +190,30 @@ public class HangmanRunner {
     private static void exitConfirm() {
         print("Are you sure you want to exit? Y/N");
         if (checkYN(false)) {
-            print("\n User has exited the program.");
-            System.exit(1);
+            print("\nUser has exited the program.");
+            exit();
         }
     }
 
+    private static void exit() {
+        print("\nThanks for playing!");
+        System.exit(1);
+    }
+
+    /**
+     * Generalized interface for determining a yes/no answer from the user
+     * @param warn Whether to advise user that the previous input was not understood
+     * @return User's choice
+     */
     private static boolean checkYN(boolean warn) {
-        if (warn) print("I don't understand that input. Type \"Y\" or \"N.\"");
+        if (warn) print("I don't understand that input. Type \"Y\" or \"N\".");
         String input = scanner.nextLine().toLowerCase();
         if (input.length() == 1) {
             if (input.contains("y")) {
                 return true;
             }
-            else if (input.contains("n")) {
+            else //noinspection SimplifiableIfStatement What does IntelliJ have against readable code?
+                if (input.contains("n")) {
                 return false;
             }
             else {
@@ -177,17 +223,23 @@ public class HangmanRunner {
         return false;
     }
 
-    private enum InputType {//Used by the readInput method
+    /**
+     * Used by the readInput method, differentiates between input types: guess, command, invalid
+     */
+    private enum InputType {
         CHARGUESS, WORDGUESS,
         EXITCOMMAND, RESTARTCOMMAND,
-        INVALIDGUESS, INVALIDCOMMAND, INVALIDINPUT,
+        INVALIDCOMMAND, INVALIDINPUT,
         OTHER
     }
 
-    private enum GuessType {//Also used by readInput method
+    /**
+     * Also used by readInput method, differentiates between guesses: correct, incorrect, previously used
+     */
+    private enum GuessType {
         CORRECTCHARGUESS, CORRECTWORDGUESS,
         WRONGCHARGUESS, WRONGWORDGUESS,
-        OTHER,
+        PREVGUESS, OTHER,
     }
 
 }

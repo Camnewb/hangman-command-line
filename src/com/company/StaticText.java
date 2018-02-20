@@ -14,9 +14,20 @@ public class StaticText {
                 blankWord;
     }
 
+    public static String commandsText(boolean warn) {
+        return (warn ? "I don't understand that command. Choose one of these:" : "")+
+                "\n--==============================-- \n" +
+                "        --Commands List--          \n" +
+                " /help     : Shows this menu. \n" +
+                " /exit     : Exits program. Duh. \n" +
+                " /restart  : Starts a new game. \n" +
+                "" +
+                "\n--==============================-- \n";
+    }
+
     public static String hangMan(int stage) {
         switch (stage) {
-            case 0:
+            case 6://It's reversed because I'm stupid and lazy
                 return "\n" +
                         "==================================\n" +
                         "\n" +
@@ -35,7 +46,7 @@ public class StaticText {
                         "                              | |  \n " +
                         "                              | |  \n " +
                         "                              | |   ";
-            case 1:
+            case 5:
                 return "\n" +
                         "==================================\n" +
                         "\n" +
@@ -54,7 +65,7 @@ public class StaticText {
                         "                              | |  \n " +
                         "                              | |  \n " +
                         "                              | |   ";
-            case 2:
+            case 4:
                 return "\n" +
                         "==================================\n" +
                         "\n" +
@@ -92,7 +103,7 @@ public class StaticText {
                         "                              | |  \n " +
                         "                              | |  \n " +
                         "                              | |   ";
-            case 4:
+            case 2:
                 return "\n" +
                         "==================================\n" +
                         "\n" +
@@ -111,7 +122,7 @@ public class StaticText {
                         "                              | |  \n " +
                         "                              | |  \n " +
                         "                              | |   ";
-            case 5:
+            case 1:
                 return "\n" +
                         "==================================\n" +
                         "\n" +
@@ -130,7 +141,7 @@ public class StaticText {
                         "                              | |  \n " +
                         "                              | |  \n " +
                         "                              | |   ";
-            case 6:
+            case 0:
                 return "\n" +
                         "==================================\n" +
                         "\n" +
@@ -153,28 +164,43 @@ public class StaticText {
         return "";
     }
 
-    public static String prompt(boolean isWrong, int stage, String guessedCharWord, List<Character> wrongGuessedChars, List<String> wrongGuessedWords) {
-        String promptText = hangMan(stage) +
+    public static String prompt(String prompt, Word word, boolean isFinished) {
+        String promptText = hangMan(word.getGuesses()) +
                 "\n" +
                 "==================================\n";
-        StringBuilder wrongChars = new StringBuilder();
-        for (Character wrongGuessedChar : wrongGuessedChars) {
-            wrongChars.append(wrongGuessedChar.toString()).append(", ");
+        StringBuilder wrongGuesses = new StringBuilder();
+        for (Character wrongGuessedChar : word.getWrongGuessedChars()) {
+            wrongGuesses.append(wrongGuessedChar.toString()).append(", ");
         }
-        for (String wrongGuessedWord : wrongGuessedWords) {
-            wrongChars.append(wrongGuessedWord).append(", ");
+        for (String wrongGuessedWord : word.getWrongGuessedWords()) {
+            wrongGuesses.append(wrongGuessedWord).append(", ");
         }
-        promptText += wrongChars + "\n" +
+        promptText += "Wrong: " + wrongGuesses + "\n" +
                 "----------------------------------\n";
-        if (isWrong) {
-            promptText += guessedCharWord + "\n" +
-                    "That was incorrect. Make another guess.\n";
-        }
-        else {
-            promptText += guessedCharWord + "\n" +
-                    "That was correct. Make another guess.\n";
-        }
+
+        //Creates a spacer to put the GuessesShownWord near the middle of the graphic
+        String spacer = mult(" ", ((34 / 2) - (word.getFullWord().length() / 2)));//34 chars is length of graphic
+
+        promptText += "\n" + spacer + (isFinished ? word.getFullWord() : word.getGuessesShownWord()) + "\n\n" + prompt + "\n";
+
         return promptText;
+    }
+
+    /**
+     * Works exactly like you expect "Hello" * 3 to work
+     * @param str string for multiplying
+     * @param times times to multiply
+     * @return String multiplied by times
+     */
+    private static String mult(String str, int times) {//#ThereShouldAlreadyBeAMethodForThisCmonJava
+        if (times < 0) {
+            return str;
+        }
+        String origStr = str;
+        for (int i = 0; i < times; i++) {
+            str += origStr;
+        }
+        return str;
     }
 
 }

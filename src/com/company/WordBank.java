@@ -1,20 +1,15 @@
 package com.company;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 public class WordBank {
 
-    private List<String> colorBank;
+    private static final List<String> colorBank = Arrays.asList("azure", "cyan", "chartreuse", "aqua", "olive",
+            "magenta");
 
-    WordBank() {
-        this.colorBank = new ArrayList<>();
-        this.colorBank.addAll(Arrays.asList("azure", "cyan", "chartreuse", "aqua", "olive", "magenta"));
-    }
-
-    public String getRandomWord(Category category) {
+    public static String getRandomWord(Category category) {
         Random random = new Random();
         switch (category) {
             case COLORS:
