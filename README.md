@@ -1,2 +1,3 @@
-# hangman-command-line
-Game of hangman in a command line
+# Hangman Command-line
+Game of hangman for a command line interface\
+Includes categories, commands and more!

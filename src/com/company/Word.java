@@ -19,7 +19,7 @@ public class Word {
     private boolean hasBeenCorrectlyGuessed = false;
     private boolean ranOutOfGuesses = false;
 
-    Word(String word, int maxGuesses) {
+    private Word(String word, int maxGuesses) {
         this.wordString = word;
         this.maxGuesses = maxGuesses;
     }
@@ -30,6 +30,10 @@ public class Word {
 
     public String getFullWord() {
         return underline(this.wordString);
+    }
+
+    public List<Character> getVisibleChars() {
+        return this.visibleChars;
     }
 
     public List<Character> getWrongGuessedChars() {
@@ -116,7 +120,7 @@ public class Word {
      * @return Whether guess is correct or not
      */
     public GuessResult guessWord(String guess) {
-        //Checks if word has already been guessed, checks for accuracy, and a
+        //Checks if word has already been guessed, checks for accuracy, and adds the char to visibleChars or wrongGuessedChars
         if (isAlreadyGuessed(guess)) {
             return GuessResult.PREVGUESSED;
         }
@@ -137,6 +141,11 @@ public class Word {
                 return true;
             }
         }
+        for (Character wrongChar : wrongGuessedChars) {
+            if (wrongChar.equals(character)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -149,21 +158,18 @@ public class Word {
         return false;
     }
 
-    public boolean isUnfinished() {//Not isFinished because IntelliJ was complaining about it being always inverted
-        if (!this.ranOutOfGuesses) {
-            //noinspection SimplifiableIfStatement I WANT MY CODE TO BE READABLE DAMMIT
-            if (!getGuessesShownWord().contains("_")) {
-                this.hasBeenCorrectlyGuessed = true;
-            }
-            else {
-                this.hasBeenCorrectlyGuessed = this.guessedWords.contains(this.wordString);
-            }
+    public boolean isFinished() {//Returns whether or not the user has ran out of guesses or has correctly guessed the word
+        this.ranOutOfGuesses = this.wrongGuessedChars.size() + getWrongGuessedWords().size() >= this.maxGuesses;
+        if (this.ranOutOfGuesses) return this.ranOutOfGuesses;
+
+        //noinspection SimplifiableIfStatement I WANT MY CODE TO BE READABLE DAMMIT
+        if (!getGuessesShownWord().contains("_")) {
+            this.hasBeenCorrectlyGuessed = true;
         }
         else {
-            this.ranOutOfGuesses = this.wrongGuessedChars.size() + getWrongGuessedWords().size() >= this.maxGuesses;
-            return this.ranOutOfGuesses;
+            this.hasBeenCorrectlyGuessed = this.guessedWords.contains(this.wordString);
         }
-        return !hasBeenCorrectlyGuessed;
+        return hasBeenCorrectlyGuessed;
     }
 
     enum GuessResult {

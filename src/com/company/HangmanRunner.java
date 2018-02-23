@@ -1,7 +1,6 @@
 package com.company;
 
 import java.util.Scanner;
-import java.util.logging.Logger;
 
 /**
  * Created by Cameron Newborn on Feb 3, 2018
@@ -10,7 +9,6 @@ public class HangmanRunner {
 
     private static final Scanner scanner = new Scanner(System.in);
     private static final int maxGuesses = 6;
-    private static final Logger LOGGER = Logger.getLogger(HangmanRunner.class.getName());
 
     /**
      * Basically the main method. Not actually the main method so I can do recursion!
@@ -20,7 +18,7 @@ public class HangmanRunner {
     public static void run() {
         Word word = new Word(WordBank.Category.COLORS, maxGuesses);
         print(StaticText.introText(word.getBlankWord()));
-        while (word.isUnfinished()) {
+        while (!word.isFinished()) {
             //Main loop for getting user input. Will only run while game is not finished
             GuessType guessType = readInput(word, false);
             //Creating prompt text. Prompt depends on the accuracy of the previous guess
@@ -42,14 +40,14 @@ public class HangmanRunner {
                     prompt = "You already guessed that.";
                     break;
             }
-            if (!guessType.equals(GuessType.CORRECTWORDGUESS)) {
+            if (!guessType.equals(GuessType.CORRECTWORDGUESS) && !word.isFinished()) {
                 prompt += " Make another guess.";
             }
 
             //prompt value it is put into the prompt() method which adds the hangman art and previous guesses
-            print(StaticText.prompt(prompt, word, !word.isUnfinished()));
+            print(StaticText.prompt(prompt, word, word.isFinished()));
         }
-        if (word.isUnfinished() && !word.hasBeenCorrectlyGuessed()) {
+        if (!word.isFinished() && !word.hasBeenCorrectlyGuessed()) {
             print("Loop broken unexpectedly!");
         }
         endText(word.hasBeenCorrectlyGuessed(), word);
@@ -74,7 +72,7 @@ public class HangmanRunner {
         String input = scanner.nextLine();
         input = input.toLowerCase();
         //Main input checker switch
-        switch (getInputType(input)) {
+        switch (getInputType(input, word)) {
             case CHARGUESS:
 
                 switch (word.guessChar(input.charAt(0))) {
@@ -117,7 +115,7 @@ public class HangmanRunner {
      * @param input User string input
      * @return InputType
      */
-    private static InputType getInputType(String input) {
+    private static InputType getInputType(String input, Word word) {
         //Checks for commands
         if (input.contains("/")) {
             if (input.indexOf("/") == 0) {
@@ -131,6 +129,12 @@ public class HangmanRunner {
                 }
                 else if (input.contains("/help")) {
                     print(StaticText.commandsText(false));
+                }
+                else if (input.contains("/debug")) {
+                    print("Finished: " + word.isFinished());
+                    print("Current Word: " + word.getFullWord());
+                    print("GuessedChars: " + word.getWrongGuessedChars().toString() + word.getVisibleChars().toString());
+                    return InputType.OTHERCOMMAND;
                 }
 
             }
@@ -228,7 +232,7 @@ public class HangmanRunner {
      */
     private enum InputType {
         CHARGUESS, WORDGUESS,
-        EXITCOMMAND, RESTARTCOMMAND,
+        EXITCOMMAND, RESTARTCOMMAND, OTHERCOMMAND,
         INVALIDCOMMAND, INVALIDINPUT,
         OTHER
     }

@@ -164,6 +164,13 @@ public class StaticText {
         return "";
     }
 
+    /**
+     * Assembles the text, graphic, and word for every guess
+     * @param prompt
+     * @param word
+     * @param isFinished
+     * @return Prompt in string form
+     */
     public static String prompt(String prompt, Word word, boolean isFinished) {
         String promptText = hangMan(word.getGuesses()) +
                 "\n" +
@@ -187,20 +194,20 @@ public class StaticText {
     }
 
     /**
-     * Works exactly like you expect "Hello" * 3 to work
+     * Works exactly like you expect "Hello" * 3 to work: concatenation in another dimension!
      * @param str string for multiplying
      * @param times times to multiply
      * @return String multiplied by times
      */
-    private static String mult(String str, int times) {//#ThereShouldAlreadyBeAMethodForThisCmonJava
+    private static String mult(String str, int times) {//#ThereShouldAlreadyBeAMethodForThisCmonOracle
         if (times < 0) {
             return str;
         }
-        String origStr = str;
+        StringBuilder strBuilder = new StringBuilder(str);
         for (int i = 0; i < times; i++) {
-            str += origStr;
+            strBuilder.append(str);
         }
-        return str;
+        return strBuilder.toString();
     }
 
 }
